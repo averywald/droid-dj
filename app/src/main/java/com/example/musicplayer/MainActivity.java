@@ -1,11 +1,19 @@
 package com.example.musicplayer;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.View;
 import android.widget.Button;
 
@@ -17,13 +25,28 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerViewAdapter adapter;
     private ArrayList<Song> songs = new ArrayList<Song>();
 
+    private PlayerService playerService;
+    private boolean isBound = false;
+
+    private final ServiceConnection connection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            PlayerService.ServiceBinder binder = (PlayerService.ServiceBinder) service;
+            playerService = binder.getPlayerService(); // expose the service object to activity
+            isBound = true; // set bound activity state
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            isBound = false; // unset bound activity state
+            // TODO: more?
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        this.recyclerView = findViewById(R.id.recyclerView);
-        this.recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
 
         // add songs to app
         this.songs.add(new Song("Bag Talk", "Joey Purp", "QUARTERTHING",
@@ -35,22 +58,26 @@ public class MainActivity extends AppCompatActivity {
         this.songs.add(new Song("Merry Go Round", "The Equatics", "Doin It!!!!",
                 R.raw._the_equatics_merry_go_round, R.drawable.merry_go_round));
 
+        this.recyclerView = findViewById(R.id.recyclerView);
+        this.recyclerView.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+
         this.adapter = new RecyclerViewAdapter(this.songs); // init RecyclerViewAdapter
         this.recyclerView.setAdapter(this.adapter); // attach it to the RecyclerView
 
-        /*
-        TODO: this.adapter needs an onclick listener to start the player activity?
-            play the song without bringing up the player activity?
-        */
+        this.adapter.SetOnSongItemClickListener((view, position) -> {
+            Song selectedSongObject = this.songs.get(position); // get data for selected song
+            Intent serviceHandoff = new Intent(this, PlayerService.class); // prepare to start player service
+            serviceHandoff.putExtra("SONG_DATA_OBJECT", selectedSongObject); // pass song data to service
 
-//        this.testButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                Intent i = new Intent(com.example.musicplayer.MainActivity.this,
-//                        PlayerActivity.class);
-//                startActivity(i);
-//            }
-//        });
+            if (this.isBound) {
+                // TODO: change the song on the player service
+                this.isBound = false;
+            }
+            else {
+                bindService(serviceHandoff, this.connection, Context.BIND_AUTO_CREATE);
+                this.isBound = true;
+            }
+        });
     }
 
     @Override
@@ -61,6 +88,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unbindService(this.connection);
     }
 
     @Override

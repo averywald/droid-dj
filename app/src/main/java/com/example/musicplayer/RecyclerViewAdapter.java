@@ -1,5 +1,7 @@
 package com.example.musicplayer;
 
+import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,10 +15,43 @@ import java.util.ArrayList;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter {
 
+    public interface OnClick {
+        void OnClick(View v, int i);
+    }
+
+    class SongViewHolder extends RecyclerView.ViewHolder {
+
+        // UI Component elements
+        ImageView albumArtImageView;
+        TextView songNameTextView, artistTextView;
+
+        public SongViewHolder(@NonNull final View itemView) {
+            super(itemView);
+
+            albumArtImageView = itemView.findViewById(R.id.albumArtImageView);
+            songNameTextView = itemView.findViewById(R.id.songTextViewRecycler);
+            artistTextView = itemView.findViewById(R.id.artistTextViewRecycler);
+
+            itemView.setOnClickListener(v -> {
+                if (songItemClickListener != null) {
+                    songItemClickListener.OnClick(itemView, getAdapterPosition());
+                }
+            });
+        }
+
+    }
+
     private ArrayList<Song> songs;
+    private OnClick songItemClickListener;
 
     public RecyclerViewAdapter(ArrayList<Song> songs) {
         this.songs = songs;
+    }
+
+    public OnClick getSongItemClickListener() { return this.songItemClickListener; }
+
+    public void SetOnSongItemClickListener(OnClick songItemClickListener) {
+        this.songItemClickListener = songItemClickListener;
     }
 
     @NonNull
@@ -25,6 +60,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
         LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
         View itemView = layoutInflater.inflate(R.layout.song_item, parent, false);
         SongViewHolder myViewHolder = new SongViewHolder(itemView);
+
         return myViewHolder;
     }
 
@@ -43,30 +79,4 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter {
         return this.songs.size();
     }
 
-    class SongViewHolder extends RecyclerView.ViewHolder {
-
-        // UI Component elements
-        ImageView albumArtImageView;
-        TextView songNameTextView, artistTextView;
-
-        public SongViewHolder(@NonNull final View itemView) {
-            super(itemView);
-
-            albumArtImageView = itemView.findViewById(R.id.albumArtImageView);
-            songNameTextView = itemView.findViewById(R.id.songTextViewRecycler);
-            artistTextView = itemView.findViewById(R.id.artistTextViewRecycler);
-
-            // TODO: add onclick listener to play that song
-            // TODO: add queue long-press menu thing
-
-//            itemView.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View v) {
-//                    if (onItemClickListener != null) {
-//                        onItemClickListener.onItemClick(itemView, getAdapterPosition());
-//                    }
-//                }
-//            });
-        }
-    }
 }
