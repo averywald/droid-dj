@@ -27,7 +27,6 @@ import java.util.List;
 
 public class PlayerService extends Service {
 
-    private Looper serviceLooper;
     private IBinder serviceBinder = new ServiceBinder();
     private MediaPlayer player;
     private ArrayList<Song> queue = new ArrayList<>();
@@ -49,8 +48,6 @@ public class PlayerService extends Service {
         thread.start();
 
         super.onCreate();
-
-        System.out.println("creating player service...");
     }
 
 //    @Override
@@ -100,6 +97,8 @@ public class PlayerService extends Service {
         this.queue.remove(s);
     }
 
+    public int getCurrentPosition() { return this.player.getCurrentPosition(); }
+
     public int getDuration() {
         return this.player.getDuration();
     }
@@ -126,8 +125,7 @@ public class PlayerService extends Service {
     }
 
     private void initMediaPlayer() {
-        player = MediaPlayer.create(this,
-                this.getResourceUri(0));
+        player = MediaPlayer.create(this, this.getResourceUri(0));
 
         player.setOnCompletionListener(l -> {
             // should go to next song

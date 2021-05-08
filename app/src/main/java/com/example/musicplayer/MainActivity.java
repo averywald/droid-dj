@@ -24,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private RecyclerViewAdapter adapter;
     private ArrayList<Song> songs = new ArrayList<Song>();
+    private Button showPlayerActivityButton;
 
     private PlayerService playerService;
     private boolean isBound = false;
@@ -47,6 +48,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // link UI components
+        this.showPlayerActivityButton = findViewById(R.id.showPlayerButton);
+        this.showPlayerActivityButton.setOnClickListener(l -> {
+            // intent
+            Intent i = new Intent(this, PlayerActivity.class);
+            startActivity(i);
+            // run intent
+        });
 
         // add songs to app
         this.songs.add(new Song("Bag Talk", "Joey Purp", "QUARTERTHING",
@@ -93,7 +103,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        unbindService(this.connection);
+        if (this.isBound) {
+            unbindService(this.connection);
+        }
     }
 
     @Override

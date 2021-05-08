@@ -1,10 +1,13 @@
 package com.example.musicplayer;
 
+import android.content.ComponentName;
 import android.content.ContentResolver;
+import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -20,12 +23,28 @@ public class PlayerActivity extends AppCompatActivity {
     // TODO: add volume bar
     // TODO: add timestamp - update loop?
 
-    private PlayerService playerService; // TODO: implement
-
     private TextView songTitle, artistName, albumTitle, startTimestamp, endTimestamp;
     private SeekBar timeSlider;
     private ImageView albumArt;
     private ImageButton prev, play, next;
+
+    private PlayerService playerService; // TODO: implement
+    private boolean isBound = false;
+
+    private final ServiceConnection connection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            PlayerService.ServiceBinder binder = (PlayerService.ServiceBinder) service;
+            playerService = binder.getPlayerService(); // expose the service object to activity
+            isBound = true; // set bound activity state
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            isBound = false; // unset bound activity state
+            // TODO: more?
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,14 +81,12 @@ public class PlayerActivity extends AppCompatActivity {
         // prev button
         prev = findViewById(R.id.prevButton);
         prev.setOnClickListener(l -> {
-//            // if the song is within the first second of playback
-//            if (player.getCurrentPosition() < 1000) {
-//                player.pause();
-//                cycleTrack(-1);
-//                player.start();
-//            } else {
-//                player.seekTo(0); // go to beginning of song
-//            }
+            // if the song is within the first second of playback
+            if (playerService.getCurrentPosition() < 1000) {
+                playerService.prev();
+            } else {
+                playerService.restart();
+            }
             this.updateButtons();
         });
         prev.setOnLongClickListener(l -> {
@@ -83,21 +100,18 @@ public class PlayerActivity extends AppCompatActivity {
         play = findViewById(R.id.playPauseButton);
         play.setImageResource(android.R.drawable.ic_media_pause);
         play.setOnClickListener(v -> {
-//            if (player.isPlaying()) {
-//                play.setImageResource(android.R.drawable.ic_media_play);
-//                player.pause();
-//            } else {
-//                play.setImageResource(android.R.drawable.ic_media_pause);
-//                player.start();
-//            }
+            if ((this.playerService.isPlaying())) {
+                playerService.pause();
+            } else {
+                playerService.play();
+            }
+            this.updateButtons();
         });
 
         // next button
         next = findViewById(R.id.nextButton);
         next.setOnClickListener(v -> {
-//            player.pause();
-//            cycleTrack(1);
-//            player.start();
+            this.playerService.next();
             this.updateButtons();
         });
 
